@@ -354,7 +354,7 @@ static void mmc_set_ios(struct mmc *mmc)
 	 *	00 = Delay3 (inverter delay)
 	 *	10 = Delay4 (inverter delay + 2ns)
 	 */
-	writel(0x8888, &host->reg->control3);
+	writel(0x8080, &host->reg->control3);
 
 	mmc_change_clock(host, mmc->clock);
 
