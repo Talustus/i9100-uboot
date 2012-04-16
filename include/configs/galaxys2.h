@@ -138,12 +138,18 @@
 	"boot_recovery=" \
 		"mmc dev 0; " \
 		"mmc read ${loadaddr} 0x16000 0x4000; " \
-		"setenv bootargs ${dev_extras}; "\
+		"setenv bootargs ${android_cmd}; "\
+		"echo Command Line: ${bootargs}; " \
 		"bootm ${loadaddr}\0" \
 	\
 	"galaxy_boot=" \
-		"setenv loadaddr 0x43E08000; " \
-		"setenv dev_extras vmalloc=144m console=tty0 --no-log lpj=3981312; "\
+		/*"setenv verify n; "*/ \
+		"setenv loadaddr 0x4EE08000; " \
+		"setenv android_cmd vmalloc=144m sec_debug.enable=0 "\
+			"sec_debug.enable_user=0 s3cfb.bootloaderfb=0x5ec00000 " \
+			"ld9040.get_lcdtype=0x2 consoleblank=0 console=ram lpj=3981312 " \
+			"sec_log=0x100000@0x4d900000;" \
+		"setenv dev_extras console=tty0 --no-log lpj=3981312; " \
 		"mmc rescan; " \
 		"run boot_recovery;\0"
 
@@ -163,7 +169,7 @@
 /* memtest works on */
 #define CONFIG_SYS_MEMTEST_START	CONFIG_SYS_SDRAM_BASE
 #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_SDRAM_BASE + 0x6000000)
-#define CONFIG_SYS_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + 0x3E00000)
+#define CONFIG_SYS_LOAD_ADDR		(CONFIG_SYS_SDRAM_BASE + 0xEE00000)
 
 #define CONFIG_SYS_HZ			1000
 
