@@ -131,13 +131,17 @@ static void init_gpio_keys() {
 int do_get_sgs2_bootmode(cmd_tbl_t *cmdtp, int flag,
 	int argc, char * const argv[])
 {
-	return s5p_gpio_get_value(&gpio2->x3, 5);
+	int home = !s5p_gpio_get_value(&gpio2->x3, 5);
+	int volup = !s5p_gpio_get_value(&gpio2->x2, 0);
+	int rc = (home << 1) | volup;
+	setenv("sgs2_bootmode_val", simple_itoa(rc));
+	return 0;
 }
 
-U_BOOT_CMD(sgs2_bootmode, CONFIG_SYS_MAXARGS, 1, do_get_sgs2_bootmode,
+U_BOOT_CMD(sgs2_get_bootmode, CONFIG_SYS_MAXARGS, 1, do_get_sgs2_bootmode,
 	"Get Galaxy S2 boot mode\n"
-	"0 -> normal boot\n"
-	"1 -> custom boot",
+	"Bit 0 -> recovery\n"
+	"Bit 1 -> custom kernel",
 	"sgs2_bootmode\n"
 );
 

@@ -147,6 +147,9 @@
 			"sec_debug.enable_user=0 sec_log=0x100000@0x4d900000 " \
 			"s3cfb.bootloaderfb=0x5ec00000 ld9040.get_lcdtype=0x2 " \
 			"consoleblank=0 lpj=3981312 vmalloc=144m ;" \
+		"if test $sgs2_bootmode_val -eq 1; then "\
+			"setenv android_cmd ${android_cmd} bootmode=2; " \
+		"fi ;" \
 		"mmc dev 0; " \
 		"mmc read ${loadaddr} 0x16000 0x4000; " \
 		"setenv bootargs ${android_cmd}; "\
@@ -158,8 +161,9 @@
 		"setenv loadaddr 0x4EE08000; " \
 		"setenv dev_extras console=tty0 --no-log lpj=3981312; " \
 		"mmc rescan; " \
-		"sgs2_bootmode; " \
-		"if test $? -eq 1; then " \
+		"sgs2_get_bootmode; " \
+		"echo [SGS2:bootmode] $sgs2_bootmode_val; " \
+		"if test $sgs2_bootmode_val -lt 2; then " \
 			"echo Regular boot; " \
 			"run boot_android; " \
 		"else; " \
