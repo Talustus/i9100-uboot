@@ -116,6 +116,31 @@ static void max8997_init (void) {
 	pmic_reg_write(p, MAX8997_REG_BUCKRAMP, 0xf9);
 }
 
+static void init_gpio_keys() {
+	/* Home key */
+	s5p_gpio_cfg_pin(&gpio2->x3, 5, GPIO_INPUT);
+	s5p_gpio_set_pull(&gpio2->x3, 5, GPIO_PULL_NONE);
+	s5p_gpio_set_drv(&gpio2->x3, 5, GPIO_DRV_1X);
+	
+	/* Volume up key */
+	s5p_gpio_cfg_pin(&gpio2->x2, 0, GPIO_INPUT);
+	s5p_gpio_set_pull(&gpio2->x2, 0, GPIO_PULL_NONE);
+	s5p_gpio_set_drv(&gpio2->x2, 0, GPIO_DRV_1X);
+}
+
+int do_get_sgs2_bootmode(cmd_tbl_t *cmdtp, int flag,
+	int argc, char * const argv[])
+{
+	return s5p_gpio_get_value(&gpio2->x3, 5);
+}
+
+U_BOOT_CMD(sgs2_bootmode, CONFIG_SYS_MAXARGS, 1, do_get_sgs2_bootmode,
+	"Get Galaxy S2 boot mode\n"
+	"0 -> normal boot\n"
+	"1 -> custom boot",
+	"sgs2_bootmode\n"
+);
+
 int board_init(void)
 {
 	gpio1 = (struct exynos4_gpio_part1 *) EXYNOS4_GPIO_PART1_BASE;
@@ -132,6 +157,8 @@ int board_init(void)
 	if (galaxys2_usb_init()) {
 		printf("failed to initialize usb\n");
 	}
+
+	init_gpio_keys();
 	
 	return 0;
 }

@@ -151,6 +151,12 @@
 			"sec_log=0x100000@0x4d900000;" \
 		"setenv dev_extras console=tty0 --no-log lpj=3981312; " \
 		"mmc rescan; " \
+		"sgs2_bootmode; " \
+		"if test $? -eq 1; then " \
+			"echo Regular boot; "\
+		"else; " \
+			"echo Custom boot; "\
+		"fi; " \
 		"run boot_recovery;\0"
 
 /* Miscellaneous configurable options */
