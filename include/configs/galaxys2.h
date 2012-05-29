@@ -90,6 +90,7 @@
 
 #define CONFIG_CMD_MMC
 #define CONFIG_CMD_EXT2
+#define CONFIG_CMD_FAT
 #undef CONFIG_CMD_NET
 #undef CONFIG_CMD_NFS
 
@@ -106,7 +107,10 @@
 	"script_img=/boot/boot.scr.uimg\0"\
 	\
 	"run_disk_boot_script=" \
-		"if ext2load ${devtype} ${devnum}:${script_part} " \
+		"if fatload $devtype} ${devnum}:${script_part} " \
+			"${loadaddr} ${script_img}; then " \
+			"source ${loadaddr}; " \
+		"elif ext2load ${devtype} ${devnum}:${script_part} " \
 				"${loadaddr} ${script_img}; then " \
 			"source ${loadaddr}; " \
 		"fi\0" \
@@ -116,7 +120,10 @@
 			"${dev_extras} root=/dev/${devname}${rootpart} rootwait ro ;"\
 		"echo Load Address:${loadaddr};" \
 		"echo Cmdline:${bootargs}; " \
-		"if ext2load ${devtype} ${devnum}:${kernel_part} " \
+		"if fatload ${devtype} ${devnum}:${kernel_part} " \
+			"${loadaddr} ${kernel_name}; then " \
+			"bootm ${loadaddr}; " \
+		"elif ext2load ${devtype} ${devnum}:${kernel_part} " \
 		            "${loadaddr} ${kernel_name}; then " \
 			"bootm ${loadaddr};" \
 		"fi\0" \
