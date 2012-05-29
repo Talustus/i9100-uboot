@@ -128,14 +128,18 @@
 		"run run_disk_boot_script; " \
 		"run real_boot\0" \
 	\
-	"emmc_custom=setenv devnum 0; " \
+	"boot_custom_emmc=setenv devnum 0; " \
 		"echo Booting from EMMC; "\
 		"setenv script_part 0xb; " \
 		"setenv kernel_part 0xb; " \
 		"setenv rootpart 0xb; " \
 		"run mmc_boot\0" \
 	\
-	"boot_recovery=" \
+	"boot_android=" \
+		"setenv android_cmd loglevel=4 console=ram sec_debug.enable=0 " \
+			"sec_debug.enable_user=0 sec_log=0x100000@0x4d900000 " \
+			"s3cfb.bootloaderfb=0x5ec00000 ld9040.get_lcdtype=0x2 " \
+			"consoleblank=0 lpj=3981312 vmalloc=144m ;" \
 		"mmc dev 0; " \
 		"mmc read ${loadaddr} 0x16000 0x4000; " \
 		"setenv bootargs ${android_cmd}; "\
@@ -145,19 +149,17 @@
 	"galaxy_boot=" \
 		/*"setenv verify n; "*/ \
 		"setenv loadaddr 0x4EE08000; " \
-		"setenv android_cmd vmalloc=144m sec_debug.enable=0 "\
-			"sec_debug.enable_user=0 s3cfb.bootloaderfb=0x5ec00000 " \
-			"ld9040.get_lcdtype=0x2 consoleblank=0 console=ram lpj=3981312 " \
-			"sec_log=0x100000@0x4d900000;" \
 		"setenv dev_extras console=tty0 --no-log lpj=3981312; " \
 		"mmc rescan; " \
 		"sgs2_bootmode; " \
 		"if test $? -eq 1; then " \
-			"echo Regular boot; "\
+			"echo Regular boot; " \
+			"run boot_android; " \
 		"else; " \
-			"echo Custom boot; "\
+			"echo Custom boot from emmc; "\
+			"run boot_custom_emmc; " \
 		"fi; " \
-		"run boot_recovery;\0"
+		"echo Failed to boot\0"
 
 /* Miscellaneous configurable options */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
