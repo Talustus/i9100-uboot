@@ -61,7 +61,8 @@
 									"stdout=serial,lcd\0" \
 									"stderr=serial,lcd\0"
 
-#define CONFIG_MACH_TYPE		MACH_TYPE_GALAXYS2
+//#define CONFIG_MACH_TYPE		MACH_TYPE_GALAXYS2
+#define CONFIG_MACH_TYPE		2838
 
 /* Power Down Modes */
 #define S5P_CHECK_SLEEP			0x00000BAD
