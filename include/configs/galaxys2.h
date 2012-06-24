@@ -257,4 +257,6 @@
 #define CONFIG_USB_GADGET_S3C_UDC_OTG
 #define CONFIG_USB_GADGET_DUALSPEED
 
+#define CONFIG_PWM 1 //for the S5P timer
+
 #endif	/* __CONFIG_H */
