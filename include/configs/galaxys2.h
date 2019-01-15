@@ -55,7 +55,23 @@
 
 #define CONFIG_VIDEO
 #define CONFIG_CFB_CONSOLE
-#define CONFIG_VGA_AS_SINGLE_DEVICE
+#define CONFIG_CFB_CONSOLE_ANSI /* Enable ANSI escape codes in framebuffer */
+//#define CONFIG_VIDEO_LOGO
+#define CONFIG_VIDEO_SW_CURSOR
+//#define CONFIG_SPLASH_SCREEN
+
+//#define CONFIG_VGA_AS_SINGLE_DEVICE
+
+/* functions for cfb_console */
+#define VIDEO_KBD_INIT_FCT              sgs2_kp_init()
+#define VIDEO_TSTC_FCT                  sgs2_kp_tstc
+#define VIDEO_GETC_FCT                  sgs2_kp_getc
+#ifndef __ASSEMBLY__
+int sgs2_kp_init(void);
+int sgs2_kp_tstc(void);
+int sgs2_kp_getc(void);
+#endif
+
 
 #define CONFIG_STD_DEVICES_SETTINGS "stdin=serial\0" \
 									"stdout=serial,lcd\0" \
@@ -84,6 +100,7 @@
 #define CONFIG_S5P_MMC			1
 
 /* allow to overwrite serial and ethaddr */
+#define CONFIG_SYS_CONSOLE_IS_IN_ENV
 #define CONFIG_ENV_OVERWRITE
 
 /* Command definition*/
@@ -91,31 +108,69 @@
 
 #define CONFIG_CMD_MMC
 #define CONFIG_CMD_EXT2
+#define CONFIG_CMD_EXT4
+#define CONFIG_CMD_EXT4_WRITE
 #define CONFIG_CMD_FAT
 #undef CONFIG_CMD_NET
 #undef CONFIG_CMD_NFS
 
+#define CONFIG_CMD_BOOTMENU             /* ANSI terminal Boot Menu */
+#define CONFIG_CMD_CLEAR                /* ANSI terminal clear screen command */
+
+
 #define CONFIG_DOS_PARTITION		1
 #define CONFIG_EFI_PARTITION		1
 
-#define CONFIG_BOOTDELAY		1
+#define CONFIG_BOOTDELAY		6
 #define CONFIG_ZERO_BOOTDELAY_CHECK
 #define CONFIG_BOOTCOMMAND	"run galaxy_boot"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	\
-	"kernel_name=/boot/vmlinux.uimg\0"\
+        "stdin=vga\0" \
+        "stdout=vga\0" \
+        "stderr=vga\0" \
+        "setcon=setenv stdin ${con};" \
+                "setenv stdout ${con};" \
+                "setenv stderr ${con}\0" \
+        "sercon=setenv con serial; run setcon\0" \
+        "usbcon=setenv con usbtty; run setcon\0" \
+        "vgacon=setenv con vga; run setcon\0" \
+	"kernel_name=/boot/boot.img\0"\
+        "kernel_name_safe=/boot/boot_safe.img\0"\
 	"script_img=/boot/boot.scr.uimg\0"\
+        "script_img_safe=/boot/boot_safe.scr.uimg\0"\
+        "script_img_sdcard=/boot/boot_sdcard.scr.uimg\0"\
 	\
 	"run_disk_boot_script=" \
 		"if fatload $devtype} ${devnum}:${script_part} " \
 			"${loadaddr} ${script_img}; then " \
 			"source ${loadaddr}; " \
-		"elif ext2load ${devtype} ${devnum}:${script_part} " \
+		"elif ext4load ${devtype} ${devnum}:${script_part} " \
 				"${loadaddr} ${script_img}; then " \
 			"source ${loadaddr}; " \
 		"fi\0" \
 	\
+        "boot_sdcard=" \
+                "setenv loadaddr 0x4EE08000; " \
+                "mmc dev 1" \
+                "mmc rescan; " \
+                "if fatload mmc 1:0x1 " \
+                        "${loadaddr} ${script_img}; then " \
+                        "source ${loadaddr}; " \
+                "elif ext4load mmc 1:0x1 " \
+                                "${loadaddr} ${script_img}; then " \
+                        "source ${loadaddr}; " \
+                "fi\0" \
+        \
+        "run_disk_boot_script_safe=" \
+                "if fatload $devtype} ${devnum}:${script_part} " \
+                        "${loadaddr} ${script_img}; then " \
+                        "source ${loadaddr}; " \
+                "elif ext4load ${devtype} ${devnum}:${script_part} " \
+                                "${loadaddr} ${script_img_safe}; then " \
+                        "source ${loadaddr}; " \
+                "fi\0" \
+        \
 	"real_boot="\
 		"setenv bootargs "\
 			"${dev_extras} root=/dev/${devname}${rootpart} rootwait ro ;"\
@@ -124,11 +179,24 @@
 		"if fatload ${devtype} ${devnum}:${kernel_part} " \
 			"${loadaddr} ${kernel_name}; then " \
 			"bootm ${loadaddr}; " \
-		"elif ext2load ${devtype} ${devnum}:${kernel_part} " \
+		"elif ext4load ${devtype} ${devnum}:${kernel_part} " \
 		            "${loadaddr} ${kernel_name}; then " \
 			"bootm ${loadaddr};" \
 		"fi\0" \
 	\
+        "real_boot_safe="\
+                "setenv bootargs "\
+                        "${dev_extras} root=/dev/${devname}${rootpart} rootwait ro ;"\
+                "echo Load Address:${loadaddr};" \
+                "echo Cmdline:${bootargs}; " \
+                "if fatload ${devtype} ${devnum}:${kernel_part} " \
+                        "${loadaddr} ${kernel_name}; then " \
+                        "bootm ${loadaddr}; " \
+                "elif ext4load ${devtype} ${devnum}:${kernel_part} " \
+                            "${loadaddr} ${kernel_name_safe}; then " \
+                        "bootm ${loadaddr};" \
+                "fi\0" \
+        \
 	"mmc_boot=mmc rescan; " \
 		"setenv devtype mmc; " \
 		"setenv devname mmcblk${devnum}p; " \
@@ -136,6 +204,13 @@
 		"run run_disk_boot_script; " \
 		"run real_boot\0" \
 	\
+        "mmc_boot_safe=mmc rescan; " \
+                "setenv devtype mmc; " \
+                "setenv devname mmcblk${devnum}p; " \
+                "mmc dev ${devnum}; " \
+                "run run_disk_boot_script_safe; " \
+                "run real_boot_safe\0" \
+        \
 	"boot_custom_emmc=setenv devnum 0; " \
 		"echo Booting from EMMC; "\
 		"setenv script_part 0xb; " \
@@ -143,6 +218,13 @@
 		"setenv rootpart 0xb; " \
 		"run mmc_boot\0" \
 	\
+        "boot_custom_emmc_safe=setenv devnum 0; " \
+                "echo Booting from EMMC; "\
+                "setenv script_part 0xb; " \
+                "setenv kernel_part 0xb; " \
+                "setenv rootpart 0xb; " \
+                "run mmc_boot_safe\0" \
+        \
 	"boot_android=" \
 		"setenv android_cmd loglevel=4 console=ram sec_debug.enable=0 " \
 			"sec_debug.enable_user=0 sec_log=0x100000@0x4d900000 " \
@@ -157,21 +239,52 @@
 		"echo Command Line: ${bootargs}; " \
 		"bootm ${loadaddr}\0" \
 	\
+        "galaxy_boot_emmc=" \
+                /*"setenv verify n; "*/ \
+                "setenv loadaddr 0x4EE08000; " \
+                "setenv dev_extras console=tty0 --no-log lpj=3981312; " \
+                "mmc rescan; " \
+                "echo Custom boot from emmc; "\
+                "run boot_custom_emmc;\0 " \
+	\
+        "galaxy_boot_safe=" \
+                /*"setenv verify n; "*/ \
+                "setenv loadaddr 0x4EE08000; " \
+                "setenv dev_extras console=tty0 --no-log lpj=3981312; " \
+                "mmc rescan; " \
+                "echo Custom boot from emmc; "\
+                "run boot_custom_emmc_safe;\0 " \
+        \
 	"galaxy_boot=" \
 		/*"setenv verify n; "*/ \
 		"setenv loadaddr 0x4EE08000; " \
 		"setenv dev_extras console=tty0 --no-log lpj=3981312; " \
 		"mmc rescan; " \
-		"sgs2_get_bootmode; " \
-		"echo [SGS2:bootmode] $sgs2_bootmode_val; " \
-		"if test $sgs2_bootmode_val -lt 2; then " \
-			"echo Regular boot; " \
-			"run boot_android; " \
-		"else; " \
-			"echo Custom boot from emmc; "\
-			"run boot_custom_emmc; " \
-		"fi; " \
-		"echo Failed to boot\0"
+		"echo Regular boot; " \
+		"run boot_android;\0 " \
+	\
+        "galaxy_boot_sdcard=" \
+                /*"setenv verify n; "*/ \
+                "setenv loadaddr 0x4EE08000; " \
+                "setenv dev_extras console=tty0 --no-log lpj=3981312; " \
+                "mmc rescan; " \
+                "echo Regular boot; " \
+                "run boot_android;\0 " \
+        \
+        "menucmd=bootmenu\0" \
+        "bootmenu_0=Run kernel from recovery=run galaxy_boot\0" \
+        "bootmenu_1=Internal eMMC=run galaxy_boot_emmc\0" \
+        "bootmenu_2=Internal eMMC Safe=run galaxy_boot_safe\0" \
+        "bootmenu_3=External SD card=run boot_sdcard\0" \
+        "bootmenu_4=U-Boot boot order=boot\0" \
+        "bootmenu_delay=30\0"
+
+
+
+#define CONFIG_AUTOBOOT_KEYED
+#define CONFIG_MENU
+#define CONFIG_MENU_SHOW
+
 
 /* Miscellaneous configurable options */
 #define CONFIG_SYS_LONGHELP		/* undef to save memory */
@@ -182,7 +295,7 @@
 #define CONFIG_SYS_PBSIZE		384	/* Print Buffer Size */
 #define CONFIG_SYS_MAXARGS		16	/* max number of command args */
 //#define CONFIG_DEFAULT_CONSOLE		"console=ttySAC2,115200n8\0"
-#define CONFIG_DEFAULT_CONSOLE		"console=tty0\0"
+//#define CONFIG_DEFAULT_CONSOLE		"console=tty0\0"
 
 /* Boot Argument Buffer Size */
 #define CONFIG_SYS_BARGSIZE		CONFIG_SYS_CBSIZE

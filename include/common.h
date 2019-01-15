@@ -268,15 +268,16 @@ int	print_buffer (ulong addr, void* data, uint width, uint count, uint linelen);
 /* common/main.c */
 void	main_loop	(void);
 int run_command(const char *cmd, int flag);
+int run_command_list(const char *cmd, int len, int flag);
 int	readline	(const char *const prompt);
 int	readline_into_buffer(const char *const prompt, char *buffer,
 			int timeout);
 int	parse_line (char *, char *[]);
 void	init_cmd_timeout(void);
 void	reset_cmd_timeout(void);
-#ifdef CONFIG_MENU
-int	abortboot(int bootdelay);
-#endif
+//#ifdef CONFIG_MENU
+//int	abortboot(int bootdelay);
+//#endif
 extern char console_buffer[];
 
 /* arch/$(ARCH)/lib/board.c */

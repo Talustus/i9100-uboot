@@ -68,6 +68,7 @@ COBJS-$(CONFIG_CMD_SOURCE) += cmd_source.o
 COBJS-$(CONFIG_CMD_BDI) += cmd_bdinfo.o
 COBJS-$(CONFIG_CMD_BEDBUG) += bedbug.o cmd_bedbug.o
 COBJS-$(CONFIG_CMD_BMP) += cmd_bmp.o
+COBJS-$(CONFIG_CMD_BOOTMENU) += cmd_bootmenu.o
 COBJS-$(CONFIG_CMD_BOOTLDR) += cmd_bootldr.o
 COBJS-$(CONFIG_CMD_CACHE) += cmd_cache.o
 COBJS-$(CONFIG_CMD_CONSOLE) += cmd_console.o
@@ -87,7 +88,13 @@ COBJS-$(CONFIG_ENV_IS_IN_EEPROM) += cmd_eeprom.o
 COBJS-$(CONFIG_CMD_EEPROM) += cmd_eeprom.o
 COBJS-$(CONFIG_CMD_ELF) += cmd_elf.o
 COBJS-$(CONFIG_SYS_HUSH_PARSER) += cmd_exit.o
+COBJS-$(CONFIG_CMD_EXT4) += cmd_ext4.o
 COBJS-$(CONFIG_CMD_EXT2) += cmd_ext2.o
+ifdef CONFIG_CMD_EXT4
+COBJS-y	+= cmd_ext_common.o
+else
+COBJS-$(CONFIG_CMD_EXT2) += cmd_ext_common.o
+endif
 COBJS-$(CONFIG_CMD_FAT) += cmd_fat.o
 COBJS-$(CONFIG_CMD_FDC)$(CONFIG_CMD_FDOS) += cmd_fdc.o
 COBJS-$(CONFIG_OF_LIBFDT) += cmd_fdt.o fdt_support.o
@@ -179,6 +186,10 @@ COBJS-$(CONFIG_CONSOLE_MUX) += iomux.o
 COBJS-y += flash.o
 COBJS-$(CONFIG_CMD_KGDB) += kgdb.o kgdb_stubs.o
 COBJS-$(CONFIG_KALLSYMS) += kallsyms.o
+
+obj-y += splash.o
+
+
 COBJS-$(CONFIG_LCD) += lcd.o
 COBJS-$(CONFIG_LYNXKDI) += lynxkdi.o
 COBJS-$(CONFIG_MENU) += menu.o

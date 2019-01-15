@@ -21,6 +21,7 @@
  */
 
 #include <common.h>
+#include <watchdog.h>
 #include <asm/io.h>
 #include <netdev.h>
 #include <asm/arch/cpu.h>
@@ -126,14 +127,36 @@ static void init_gpio_keys() {
 	s5p_gpio_cfg_pin(&gpio2->x2, 0, GPIO_INPUT);
 	s5p_gpio_set_pull(&gpio2->x2, 0, GPIO_PULL_NONE);
 	s5p_gpio_set_drv(&gpio2->x2, 0, GPIO_DRV_1X);
+
+        /* Volume down key */
+        s5p_gpio_cfg_pin(&gpio2->x2, 1, GPIO_INPUT);
+        s5p_gpio_set_pull(&gpio2->x2, 1, GPIO_PULL_NONE);
+        s5p_gpio_set_drv(&gpio2->x2, 1, GPIO_DRV_1X);
+
+
 }
+
+int sgs2_get_keys(void)
+{
+        int home = !s5p_gpio_get_value(&gpio2->x3, 5);
+        int volup = !s5p_gpio_get_value(&gpio2->x2, 0);
+        int voldown = !s5p_gpio_get_value(&gpio2->x2, 1);
+
+	if (home) return 13;
+	if (volup) return 18;
+        if (voldown) return 33;
+
+        return 0;
+}
+
 
 int do_get_sgs2_bootmode(cmd_tbl_t *cmdtp, int flag,
 	int argc, char * const argv[])
 {
 	int home = !s5p_gpio_get_value(&gpio2->x3, 5);
 	int volup = !s5p_gpio_get_value(&gpio2->x2, 0);
-	int rc = (home << 1) | volup;
+        int voldown = !s5p_gpio_get_value(&gpio2->x2, 1);
+	int rc = (home << 2) | (volup << 1) | voldown;
 	setenv("sgs2_bootmode_val", simple_itoa(rc));
 	return 0;
 }
@@ -376,3 +399,79 @@ void *video_hw_init(void) {
 	return &gdev;
 }
 #endif
+
+#define KEYBUF_SIZE 32
+static u8 keybuf[KEYBUF_SIZE];
+static u8 keybuf_head;
+static u8 keybuf_tail;
+
+static ulong start,last,now;
+int ret_chr = '\e';
+
+/*
+ * Routine: sgs2_kp_init
+ * Description: Initialize HW keyboard.
+ */
+int sgs2_kp_init(void)
+{
+        int ret = 0;
+        start = get_timer (0);
+        last = start;
+        return ret;
+}
+
+static void sgs2_kp_fill(u8 k)
+{
+        /* check if some cursor key without meta fn key was pressed */
+        if ((k == 18 || k == 33)) {
+                if (k == 18) /* up */
+                        ret_chr = 'A';
+                else if (k == 33) /* down */
+                        ret_chr = 'B';
+                return;
+        }
+	if (k == 13) {
+			ret_chr='\r';
+		return;
+	}
+
+}
+
+/*
+ * Routine: rx51_kp_tstc
+ * Description: Test if key was pressed (from buffer).
+ */
+int sgs2_kp_tstc(void)
+{
+        u8 c;
+        u8 intr;
+        u8 mods;
+
+
+	now = get_timer(start);
+	if ((now - last) < 400000)
+		return 0;
+
+	c = sgs2_get_keys();
+        /* test if on of key pressed */
+        if (c == 0)
+                return 0;
+
+        sgs2_kp_fill(c);
+	last = now;
+
+        return 1;
+}
+
+/*
+ * Routine: rx51_kp_getc
+ * Description: Get last pressed key (from buffer).
+ */
+int sgs2_kp_getc(void)
+{
+        keybuf_head %= KEYBUF_SIZE;
+        while (!sgs2_kp_tstc())
+                mdelay(1);
+        return ret_chr;
+}
+

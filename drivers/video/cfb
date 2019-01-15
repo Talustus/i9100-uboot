@@ -2279,7 +2279,6 @@ int drv_video_init(void)
 	console_dev.getc = NULL;	/* 'getc' function */
 
 #if !defined(CONFIG_VGA_AS_SINGLE_DEVICE)
-
 	/* Also init console device */
 	console_dev.flags |= DEV_FLAGS_INPUT;
 	console_dev.tstc = VIDEO_TSTC_FCT;	/* 'tstc' function */
